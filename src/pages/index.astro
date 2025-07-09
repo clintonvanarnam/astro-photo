@@ -1,11 +1,38 @@
 ---
-import Welcome from '../components/Welcome.astro';
-import Layout from '../layouts/Layout.astro';
+import { client } from '../lib/sanityClient.js'
+import { photosQuery } from '../lib/queries.js'
 
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
+let posts = [];
+let fetchError = null;
+try {
+  posts = await client.fetch(photosQuery) || [];
+  console.log('Fetched posts:', posts);
+} catch (e) {
+  console.error('Error fetching posts:', e);
+  fetchError = e.message || e.toString();
+  posts = [];
+}
 ---
 
-<Layout>
-	<Welcome />
-</Layout>
+<html>
+  <head>
+    <title>Sanity + Astro Photo Site</title>
+  </head>
+  <body>
+    <h1>DOMAIN KING</h1>
+    {fetchError && (
+      <div style="color: red; font-weight: bold;">Error fetching posts: {fetchError}</div>
+    )}
+    {(!posts || posts.length === 0) && !fetchError && (
+      <div style="color: orange; font-weight: bold;">No posts found.</div>
+    )}
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;">
+      {(posts || []).map(post => (
+        <div>
+          <h3>{post.title}</h3>
+          <img src={post.mainImage?.asset?.url} alt={post.title} style="width: 100%;" />
+        </div>
+      ))}
+    </div>
+  </body>
+</html>
