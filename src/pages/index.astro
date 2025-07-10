@@ -19,10 +19,13 @@ try {
     <title>DOMAIN KING</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
+      body {
+        margin: 0.5rem;
+      }
       .gallery-grid {
         display: grid;
         grid-template-columns: repeat(5, 1fr);
-        gap: 1rem;
+        gap: 0.5rem;
       }
       @media (max-width: 1200px) {
         .gallery-grid {
@@ -47,7 +50,6 @@ try {
     </style>
   </head>
   <body>
-    <h1>DOMAIN KING</h1>
     {fetchError && (
       <div style="color: red; font-weight: bold;">Error fetching posts: {fetchError}</div>
     )}
@@ -68,15 +70,23 @@ try {
       document.addEventListener('DOMContentLoaded', function() {
         const overlay = document.getElementById('lightbox-overlay');
         const img = document.getElementById('lightbox-img');
-        document.querySelectorAll('.lightbox-thumb').forEach(function(thumb) {
+        const thumbs = Array.from(document.querySelectorAll('.lightbox-thumb'));
+        let currentIdx = 0;
+        function showLightbox(idx) {
+          const thumb = thumbs[idx];
+          if (!thumb) return;
+          img.src = thumb.getAttribute('data-url');
+          img.alt = thumb.getAttribute('data-alt');
+          overlay.style.display = 'flex';
+          setTimeout(() => {
+            overlay.style.opacity = '1';
+            img.style.transform = 'scale(1)';
+          }, 10);
+          currentIdx = idx;
+        }
+        thumbs.forEach(function(thumb, idx) {
           thumb.addEventListener('click', function() {
-            img.src = thumb.getAttribute('data-url');
-            img.alt = thumb.getAttribute('data-alt');
-            overlay.style.display = 'flex';
-            setTimeout(() => {
-              overlay.style.opacity = '1';
-              img.style.transform = 'scale(1)';
-            }, 10);
+            showLightbox(idx);
           });
         });
         overlay.addEventListener('click', function(e) {
@@ -87,6 +97,22 @@ try {
               overlay.style.display = 'none';
               img.src = '';
             }, 300);
+          }
+        });
+        document.addEventListener('keydown', function(e) {
+          if (overlay.style.display === 'flex') {
+            if (e.key === 'ArrowLeft') {
+              showLightbox((currentIdx - 1 + thumbs.length) % thumbs.length);
+            } else if (e.key === 'ArrowRight') {
+              showLightbox((currentIdx + 1) % thumbs.length);
+            } else if (e.key === 'Escape') {
+              overlay.style.opacity = '0';
+              img.style.transform = 'scale(0.95)';
+              setTimeout(() => {
+                overlay.style.display = 'none';
+                img.src = '';
+              }, 300);
+            }
           }
         });
       });
