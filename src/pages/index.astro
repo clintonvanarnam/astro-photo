@@ -27,11 +27,41 @@ try {
       <div style="color: orange; font-weight: bold;">No posts found.</div>
     )}
     <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 1rem;">
-      {(posts || []).map(post => (
+      {(posts || []).map((post, idx) => (
         <div>
-          <img src={post.mainImage?.asset?.url} alt={post.title} style="width: 100%;" />
+          <img class="lightbox-thumb" data-url={post.mainImage?.asset?.url} data-alt={post.title} src={post.mainImage?.asset?.url} alt={post.title} style="width: 100%; cursor: pointer;" />
         </div>
       ))}
     </div>
+    <div id="lightbox-overlay" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.8); align-items:center; justify-content:center; z-index:1000; opacity:0; transition:opacity 0.3s;">
+      <img id="lightbox-img" src="" alt="" style="max-width:90vw; max-height:90vh; box-shadow:0 0 20px #000; transition:transform 0.3s; transform:scale(0.95);" />
+    </div>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const overlay = document.getElementById('lightbox-overlay');
+        const img = document.getElementById('lightbox-img');
+        document.querySelectorAll('.lightbox-thumb').forEach(function(thumb) {
+          thumb.addEventListener('click', function() {
+            img.src = thumb.getAttribute('data-url');
+            img.alt = thumb.getAttribute('data-alt');
+            overlay.style.display = 'flex';
+            setTimeout(() => {
+              overlay.style.opacity = '1';
+              img.style.transform = 'scale(1)';
+            }, 10);
+          });
+        });
+        overlay.addEventListener('click', function(e) {
+          if (e.target === overlay) {
+            overlay.style.opacity = '0';
+            img.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+              overlay.style.display = 'none';
+              img.src = '';
+            }, 300);
+          }
+        });
+      });
+    </script>
   </body>
 </html>
