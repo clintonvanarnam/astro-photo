@@ -17,15 +17,6 @@ try {
 <html>
   <head>
     <title>DOMAIN KING</title>
-  </head>
-  <body>
-    <h1>DOMAIN KING</h1>
-    {fetchError && (
-      <div style="color: red; font-weight: bold;">Error fetching posts: {fetchError}</div>
-    )}
-    {(!posts || posts.length === 0) && !fetchError && (
-      <div style="color: orange; font-weight: bold;">No posts found.</div>
-    )}
     <style>
       .gallery-grid {
         display: grid;
@@ -53,6 +44,15 @@ try {
         }
       }
     </style>
+  </head>
+  <body>
+    <h1>DOMAIN KING</h1>
+    {fetchError && (
+      <div style="color: red; font-weight: bold;">Error fetching posts: {fetchError}</div>
+    )}
+    {(!posts || posts.length === 0) && !fetchError && (
+      <div style="color: orange; font-weight: bold;">No posts found.</div>
+    )}
     <div class="gallery-grid">
       {(posts || []).map((post, idx) => (
         <div>
