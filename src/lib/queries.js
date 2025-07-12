@@ -7,3 +7,5 @@ export const photosQuery = `*[_type == "post"]{
     }
   }
 }`;
+
+export const aboutQuery = `*[_type == "about"][0]{content}`;

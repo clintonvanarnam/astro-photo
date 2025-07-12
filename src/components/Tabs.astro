@@ -1,0 +1,64 @@
+---
+const { activeTab = 'photos' } = Astro.props;
+---
+<div class="tab-bar">
+  <button id="tab-photos" class="tab{activeTab === 'photos' ? ' active' : ''}">View Photos</button>
+  <button id="tab-about" class="tab{activeTab === 'about' ? ' active' : ''}">About</button>
+</div>
+<style>
+  .tab-bar {
+    display: flex;
+    justify-content: center;
+    margin: 2rem 0 1rem 0;
+    gap: 1rem;
+  }
+  .tab {
+    padding: 0.5rem 2.8rem;
+    min-width: 120px;
+    height: 48px;
+    border-radius: 9999px;
+    border: none;
+    background: #e0e0e0;
+    color: #333;
+    font-size: 1.1rem;
+    font-weight: 500;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    transition: background 0.2s, color 0.2s, border 0.2s;
+    appearance: none;
+    -webkit-appearance: none;
+    outline: none;
+  }
+  .tab.active {
+    background: #333;
+    color: #fff;
+    border: none;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+  }
+  .tab:focus {
+    outline: 2px solid #888;
+  }
+</style>
+<script is:inline>
+  document.addEventListener('DOMContentLoaded', function() {
+    const tabPhotos = document.getElementById('tab-photos');
+    const tabAbout = document.getElementById('tab-about');
+    const gallerySection = document.getElementById('gallery-section');
+    const aboutSection = document.getElementById('about-section');
+    tabPhotos.addEventListener('click', function() {
+      tabPhotos.classList.add('active');
+      tabAbout.classList.remove('active');
+      gallerySection.style.display = '';
+      aboutSection.style.display = 'none';
+    });
+    tabAbout.addEventListener('click', function() {
+      tabAbout.classList.add('active');
+      tabPhotos.classList.remove('active');
+      gallerySection.style.display = 'none';
+      aboutSection.style.display = '';
+    });
+    // Default: show photos
+    gallerySection.style.display = '';
+    aboutSection.style.display = 'none';
+  });
+</script>

@@ -10,7 +10,7 @@ const client = createClient({
   apiVersion: '2023-07-09',
 });
 
-const IMAGES_DIR = path.resolve(`${process.env.HOME}/Desktop/1`);
+const IMAGES_DIR = path.resolve(`${process.env.HOME}/Desktop/2`);
 
 const uploadImages = async () => {
   const files = fs.readdirSync(IMAGES_DIR).filter(file => file.endsWith('.png'));

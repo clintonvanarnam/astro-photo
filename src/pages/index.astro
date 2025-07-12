@@ -50,24 +50,67 @@ try {
     </style>
   </head>
   <body>
-    {fetchError && (
-      <div style="color: red; font-weight: bold;">Error fetching posts: {fetchError}</div>
-    )}
-    {(!posts || posts.length === 0) && !fetchError && (
-      <div style="color: orange; font-weight: bold;">No posts found.</div>
-    )}
-    <div class="gallery-grid">
-      {(posts || []).map((post, idx) => (
-        <div>
-          <img class="lightbox-thumb" data-url={post.mainImage?.asset?.url} data-alt={post.title} src={post.mainImage?.asset?.url} alt={post.title} style="width: 100%; cursor: pointer;" />
-        </div>
-      ))}
+    <div id="intro-overlay" style="position:fixed; top:0; left:0; width:100vw; height:100vh; background:#fff; z-index:2000; display:flex; align-items:center; justify-content:center;">
+      <div id="custom-cursor" style="position:absolute; pointer-events:none; font-size:10px; color:#222; font-family:monospace; background:none; padding:0; border:none; box-shadow:none; font-weight:400;">
+        Click to Enter
+      </div>
     </div>
-    <div id="lightbox-overlay" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.8); align-items:center; justify-content:center; z-index:1000; opacity:0; transition:opacity 0.3s;">
-      <img id="lightbox-img" src="" alt="" style="max-width:90vw; max-height:90vh; box-shadow:0 0 20px #000; transition:transform 0.3s; transform:scale(0.95);" />
+    <div id="soundcloud-player" style="display:none;">
+      <iframe id="sc-iframe" width="0" height="0" scrolling="no" frameborder="no" allow="autoplay"
+        src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/crisvalk/heavy-metal-drum-solo-by-dario-scussel&auto_play=true&hide_related=true&show_comments=false&show_user=false&show_reposts=false&visual=false&loop=true">
+      </iframe>
     </div>
+    <div id="mute-toggle" style="display:none; position:fixed; top:18px; right:24px; z-index:3000; font-size:10px; font-family:monospace; color:#222; background:none; padding:0; border:none; cursor:pointer;">
+      mute
+    </div>
+    <div id="main-content" style="display:none;">
+      {fetchError && (
+        <div style="color: red; font-weight: bold;">Error fetching posts: {fetchError}</div>
+      )}
+      {(!posts || posts.length === 0) && !fetchError && (
+        <div style="color: orange; font-weight: bold;">No posts found.</div>
+      )}
+      <div class="gallery-grid">
+        {(posts || []).map((post, idx) => (
+          <div>
+            <img class="lightbox-thumb" data-url={post.mainImage?.asset?.url} data-alt={post.title} src={post.mainImage?.asset?.url} alt={post.title} style="width: 100%; cursor: pointer;" />
+          </div>
+        ))}
+      </div>
+      <div id="lightbox-overlay" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.8); align-items:center; justify-content:center; z-index:1000; opacity:0; transition:opacity 0.3s;">
+        <img id="lightbox-img" src="" alt="" style="max-width:90vw; max-height:90vh; box-shadow:0 0 20px #000; transition:transform 0.3s; transform:scale(0.95);" />
+      </div>
+    </div>
+    <script src="https://w.soundcloud.com/player/api.js"></script>
     <script>
       document.addEventListener('DOMContentLoaded', function() {
+        const intro = document.getElementById('intro-overlay');
+        const main = document.getElementById('main-content');
+        const cursor = document.getElementById('custom-cursor');
+        const scIframe = document.getElementById('sc-iframe');
+        const muteToggle = document.getElementById('mute-toggle');
+        let widget;
+        // Hide default cursor on intro overlay
+        intro.style.cursor = 'none';
+        intro.addEventListener('mousemove', function(e) {
+          cursor.style.left = (e.clientX + 10) + 'px';
+          cursor.style.top = (e.clientY + 10) + 'px';
+        });
+        intro.addEventListener('click', function() {
+          intro.style.display = 'none';
+          main.style.display = '';
+          muteToggle.style.display = 'block';
+          widget = window.SC.Widget(scIframe);
+          widget.play();
+          widget.setVolume(100);
+        });
+        let muted = false;
+        muteToggle.addEventListener('click', function() {
+          if (!widget) return;
+          muted = !muted;
+          widget.setVolume(muted ? 0 : 100);
+          muteToggle.textContent = muted ? 'unmute' : 'mute';
+        });
         const overlay = document.getElementById('lightbox-overlay');
         const img = document.getElementById('lightbox-img');
         const thumbs = Array.from(document.querySelectorAll('.lightbox-thumb'));
