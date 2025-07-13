@@ -18,50 +18,19 @@ try {
   <head>
     <title>DOMAIN KING</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <style>
-      body {
-        margin: 0.5rem;
-      }
-      .gallery-grid {
-        display: grid;
-        grid-template-columns: repeat(5, 1fr);
-        gap: 0.5rem;
-      }
-      @media (max-width: 1200px) {
-        .gallery-grid {
-          grid-template-columns: repeat(4, 1fr);
-        }
-      }
-      @media (max-width: 900px) {
-        .gallery-grid {
-          grid-template-columns: repeat(3, 1fr);
-        }
-      }
-      @media (max-width: 700px) {
-        .gallery-grid {
-          grid-template-columns: repeat(2, 1fr);
-        }
-      }
-      @media (max-width: 500px) {
-        .gallery-grid {
-          grid-template-columns: 1fr;
-        }
-      }
-    </style>
+    <link rel="stylesheet" href="/src/assets/main.css" />
   </head>
   <body>
     <div id="intro-overlay" style="position:fixed; top:0; left:0; width:100vw; height:100vh; background:#fff; z-index:2000; display:flex; align-items:center; justify-content:center;">
+      <canvas id="three-canvas" style="position:absolute; top:0; left:0; width:100vw; height:100vh; z-index:2100; background:transparent;"></canvas>
       <div id="custom-cursor" style="position:absolute; pointer-events:none; font-size:10px; color:#222; font-family:monospace; background:none; padding:0; border:none; box-shadow:none; font-weight:400;">
-        Click to Enter
+        [click]
       </div>
     </div>
-    <div id="soundcloud-player" style="display:none;">
-      <iframe id="sc-iframe" width="0" height="0" scrolling="no" frameborder="no" allow="autoplay"
-        src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/ronimal/heavy-metal-guitar-shred-solo&auto_play=true&hide_related=true&show_comments=false&show_user=false&show_reposts=false&visual=false&loop=true">
-      </iframe>
-    </div>
-    <div id="mute-toggle" style="display:none; position:fixed; top:18px; right:24px; z-index:3000; font-size:10px; font-family:monospace; color:#222; background:none; padding:0; border:none; cursor:pointer;">
-      mute
+    <div id="soundcloud-controls" style="position:fixed; top:18px; right:24px; z-index:3000; display:flex; align-items:center; gap:16px; font-size:10px; font-family:monospace;">
+      <div id="soundcloud-player" style="display:none;"></div>
+      <div id="mute-toggle" style="display:none; cursor:pointer;">mute</div>
+      <pre id="sound-visual" style="margin:0; padding:0; background:none; border:none; color:#fff; font-family:monospace; font-size:10px; line-height:1;">||||||||||</pre>
     </div>
     <div id="main-content" style="display:none;">
       {fetchError && (
@@ -81,84 +50,10 @@ try {
         <img id="lightbox-img" src="" alt="" style="max-width:90vw; max-height:90vh; box-shadow:0 0 20px #000; transition:transform 0.3s; transform:scale(0.95);" />
       </div>
     </div>
-    <script src="https://w.soundcloud.com/player/api.js"></script>
-    <script>
-      document.addEventListener('DOMContentLoaded', function() {
-        const intro = document.getElementById('intro-overlay');
-        const main = document.getElementById('main-content');
-        const cursor = document.getElementById('custom-cursor');
-        const scIframe = document.getElementById('sc-iframe');
-        const muteToggle = document.getElementById('mute-toggle');
-        let widget;
-        // Hide default cursor on intro overlay
-        intro.style.cursor = 'none';
-        intro.addEventListener('mousemove', function(e) {
-          cursor.style.left = (e.clientX + 10) + 'px';
-          cursor.style.top = (e.clientY + 10) + 'px';
-        });
-        intro.addEventListener('click', function() {
-          intro.style.display = 'none';
-          main.style.display = '';
-          muteToggle.style.display = 'block';
-          widget = window.SC.Widget(scIframe);
-          widget.play();
-          widget.setVolume(100);
-        });
-        let muted = false;
-        muteToggle.addEventListener('click', function() {
-          if (!widget) return;
-          muted = !muted;
-          widget.setVolume(muted ? 0 : 100);
-          muteToggle.textContent = muted ? 'unmute' : 'mute';
-        });
-        const overlay = document.getElementById('lightbox-overlay');
-        const img = document.getElementById('lightbox-img');
-        const thumbs = Array.from(document.querySelectorAll('.lightbox-thumb'));
-        let currentIdx = 0;
-        function showLightbox(idx) {
-          const thumb = thumbs[idx];
-          if (!thumb) return;
-          img.src = thumb.getAttribute('data-url');
-          img.alt = thumb.getAttribute('data-alt');
-          overlay.style.display = 'flex';
-          setTimeout(() => {
-            overlay.style.opacity = '1';
-            img.style.transform = 'scale(1)';
-          }, 10);
-          currentIdx = idx;
-        }
-        thumbs.forEach(function(thumb, idx) {
-          thumb.addEventListener('click', function() {
-            showLightbox(idx);
-          });
-        });
-        overlay.addEventListener('click', function(e) {
-          if (e.target === overlay) {
-            overlay.style.opacity = '0';
-            img.style.transform = 'scale(0.95)';
-            setTimeout(() => {
-              overlay.style.display = 'none';
-              img.src = '';
-            }, 300);
-          }
-        });
-        document.addEventListener('keydown', function(e) {
-          if (overlay.style.display === 'flex') {
-            if (e.key === 'ArrowLeft') {
-              showLightbox((currentIdx - 1 + thumbs.length) % thumbs.length);
-            } else if (e.key === 'ArrowRight') {
-              showLightbox((currentIdx + 1) % thumbs.length);
-            } else if (e.key === 'Escape') {
-              overlay.style.opacity = '0';
-              img.style.transform = 'scale(0.95)';
-              setTimeout(() => {
-                overlay.style.display = 'none';
-                img.src = '';
-              }, 300);
-            }
-          }
-        });
-      });
-    </script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.149.0/build/three.min.js"></script>
+    <script src="/src/assets/three/FontLoader.js"></script>
+    <script src="/src/assets/three/TextGeometry.js"></script>
+    <script src="/src/assets/three-domainking.js"></script>
+    <script src="/src/assets/main.js"></script>
   </body>
 </html>
