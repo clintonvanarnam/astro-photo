@@ -1,32 +1,124 @@
 body {
-  margin: 0.5rem;
-  color: #fff;
-  background: #000000;
+  margin: 0;
+  background-color: #000000;
+  color: #000;
+  font-family: sans-serif;
 }
+
+#main-content {
+  display: none; /* Initially hidden, controlled by JS */
+}
+
+.error-message {
+  color: red;
+  font-weight: bold;
+  padding: 20px;
+}
+
+.warning-message {
+  color: orange;
+  font-weight: bold;
+  padding: 20px;
+}
+
+/* Gallery */
 .gallery-grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 0.5rem;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 10px;
+  padding: 10px;
 }
-/* Only apply difference mode to typography */
-h1, h2, h3, h4, h5, h6, p, span, .gallery-text, .grid-title, .grid-name-year, .grid-description, .currently-playing, #custom-cursor, #mute-toggle, #playButton, .filter-button, .clear-button {
-  color: #fff !important;
-  mix-blend-mode: difference !important;
-  background: none !important;
-  border: none !important;
+
+.lightbox-thumb {
+  width: 100%;
+  cursor: pointer;
+  display: block;
 }
-.gallery-grid img, #lightbox-img {
-  color: initial !important;
-  mix-blend-mode: normal !important;
-  filter: none !important;
+
+/* Lightbox */
+#lightbox-overlay {
+  display: none; /* Initially hidden, controlled by JS */
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.8);
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out;
 }
-/* Remove difference mode from overlays and containers */
-#intro-overlay, #lightbox-overlay, #main-content {
-  mix-blend-mode: normal !important;
-  color: initial !important;
-  background: none !important;
-  border: none !important;
+
+#lightbox-img {
+  max-width: 90vw;
+  max-height: 90vh;
+  box-shadow: 0 0 20px #000;
+  transition: transform 0.3s ease-in-out;
+  transform: scale(0.95);
 }
+
+/* Intro Overlay */
+#intro-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: #fff;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+#three-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 2100;
+  background: transparent;
+}
+
+/* SoundCloud Controls */
+#soundcloud-controls {
+  position: fixed;
+  top: 18px;
+  right: 24px;
+  z-index: 3000;
+  display: none; /* Initially hidden, controlled by JS */
+  align-items: center;
+  gap: 16px;
+  font-size: 10px;
+  font-family: monospace;
+  color: #000;
+}
+
+#soundcloud-player,
+#mute-toggle,
+#sound-visual {
+  display: block;
+}
+
+#mute-toggle {
+  cursor: pointer;
+}
+
+#sound-visual {
+  margin: 0;
+  padding: 0;
+  background: none;
+  border: none;
+  color: #000;
+  font-family: monospace;
+  font-size: 10px;
+  line-height: 1;
+}
+
 @media (max-width: 1200px) {
   .gallery-grid {
     grid-template-columns: repeat(4, 1fr);

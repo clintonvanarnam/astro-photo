@@ -10,16 +10,21 @@ let songData = {
 document.addEventListener('DOMContentLoaded', function () {
   const intro = document.getElementById('intro-overlay');
   const main = document.getElementById('main-content');
-  const cursor = document.getElementById('custom-cursor');
   const muteToggle = document.getElementById('mute-toggle');
   const soundVisual = document.getElementById('sound-visual');
   let widget = null;
   let muted = false;
   let visualInterval = null;
+
+  // Initialize the Three.js scene
+  if (window.threeScene && typeof window.threeScene.init === 'function') {
+    window.threeScene.init();
+  }
+
   function updateSoundVisual(volume, playing) {
     // One-line equalizer: 10 bars, each with a height char
     const barCount = 10;
-    const chars = [' ', '.', ':', 'l', 'I', '!', '|']; // Increasing height
+    const chars = [' ', '▂', '▃', '▄', '▅', '▆', '▇', '█']; // Unicode block characters
     let bars = [];
     if (!playing || volume === 0) {
       bars = Array(barCount).fill(' ');
@@ -37,12 +42,7 @@ document.addEventListener('DOMContentLoaded', function () {
       updateSoundVisual(muted ? 0 : 100, !muted);
     }, 180);
   }
-  // Hide default cursor on intro overlay
-  intro.style.cursor = 'none';
-  intro.addEventListener('mousemove', function(e) {
-    cursor.style.left = (e.clientX + 10) + 'px';
-    cursor.style.top = (e.clientY + 10) + 'px';
-  });
+
   function setupSoundCloudPlayer(song) {
     const container = document.getElementById('soundcloud-player');
     container.innerHTML = '';
@@ -54,16 +54,19 @@ document.addEventListener('DOMContentLoaded', function () {
     iframe.scrolling = 'no';
     iframe.allow = 'autoplay';
     container.appendChild(iframe);
-    // Retry logic to wait for SoundCloud API
-    function tryInitWidget(retries = 15) {
+    // Wait for SC.Widget to be available, then set up mute button
+    function waitForWidget(retries = 30) {
       if (window.SC && window.SC.Widget) {
         widget = window.SC.Widget(iframe);
         muteToggle.style.display = 'block';
         soundVisual.style.display = 'block';
         soundVisual.textContent = '';
         startVisualPulse();
-        widget.bind(window.SC.Widget.Events.READY, function () {});
-        widget.bind(window.SC.Widget.Events.PLAY, function () {});
+        widget.bind(window.SC.Widget.Events.READY, function () {
+          // Set initial volume and button state
+          widget.setVolume(muted ? 0 : 100);
+          muteToggle.textContent = muted ? 'unmute' : 'mute';
+        });
         muteToggle.onclick = function() {
           if (!widget) return;
           muted = !muted;
@@ -72,18 +75,35 @@ document.addEventListener('DOMContentLoaded', function () {
           updateSoundVisual(muted ? 0 : 100, !muted);
         };
       } else if (retries > 0) {
-        setTimeout(() => tryInitWidget(retries - 1), 150);
+        setTimeout(() => waitForWidget(retries - 1), 100);
       } else {
         muteToggle.style.display = 'none';
-        soundVisual.textContent = '[SoundCloud API failed]';
+        // If iframe is present, show static visualizer bar as fallback
+        if (container.querySelector('iframe')) {
+          soundVisual.textContent = '▄▄▄▄▄▄▄▄▄▄';
+        } else {
+          soundVisual.textContent = '[SoundCloud API failed]';
+        }
       }
     }
-    tryInitWidget();
+    waitForWidget();
   }
   intro.addEventListener('click', function() {
     intro.style.display = 'none';
-    main.style.display = '';
+    main.style.display = 'block';
+    
+    const soundControls = document.getElementById('soundcloud-controls');
+    if (soundControls) {
+        soundControls.style.display = 'flex';
+    }
+
+    // Destroy the Three.js scene to free up resources
+    if (window.threeScene && typeof window.threeScene.destroy === 'function') {
+        window.threeScene.destroy();
+    }
+
     setupSoundCloudPlayer(songData.songs[0]);
+    alignSoundControls();
   });
   const overlay = document.getElementById('lightbox-overlay');
   const img = document.getElementById('lightbox-img');
@@ -132,4 +152,17 @@ document.addEventListener('DOMContentLoaded', function () {
       }
     }
   });
+
+  function alignSoundControls() {
+    const galleryGrid = document.querySelector('.gallery-grid');
+    const soundControls = document.getElementById('soundcloud-controls');
+    if (galleryGrid && soundControls && galleryGrid.offsetParent !== null) {
+      const rect = galleryGrid.getBoundingClientRect();
+      const rightMargin = window.innerWidth - rect.right;
+      soundControls.style.right = `${rightMargin}px`;
+    }
+  }
+
+  // Align on resize, but not on initial load since grid is hidden
+  window.addEventListener('resize', alignSoundControls);
 });

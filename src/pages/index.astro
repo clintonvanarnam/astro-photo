@@ -19,38 +19,44 @@ try {
     <title>DOMAIN KING</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="/main.css" />
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.165.0/examples/jsm/"
+        }
+      }
+    </script>
   </head>
   <body>
-    <div id="intro-overlay" style="position:fixed; top:0; left:0; width:100vw; height:100vh; background:#fff; z-index:2000; display:flex; align-items:center; justify-content:center;">
-      <canvas id="three-canvas" style="position:absolute; top:0; left:0; width:100vw; height:100vh; z-index:2100; background:transparent;"></canvas>
-      <div id="custom-cursor" style="position:absolute; pointer-events:none; font-size:10px; color:#222; font-family:monospace; background:none; padding:0; border:none; box-shadow:none; font-weight:400;">
-        [click]
-      </div>
+    <div id="intro-overlay">
+      <canvas id="three-canvas"></canvas>
     </div>
-    <div id="soundcloud-controls" style="position:fixed; top:18px; right:24px; z-index:3000; display:flex; align-items:center; gap:16px; font-size:10px; font-family:monospace;">
-      <div id="soundcloud-player" style="display:block;"></div>
-      <div id="mute-toggle" style="display:block; cursor:pointer;">mute</div>
-      <pre id="sound-visual" style="margin:0; padding:0; background:none; border:none; color:#fff; font-family:monospace; font-size:10px; line-height:1; display:block;"></pre>
+    <div id="soundcloud-controls">
+      <div id="soundcloud-player"></div>
+      <div id="mute-toggle">mute</div>
+      <pre id="sound-visual"></pre>
     </div>
-    <div id="main-content" style="display:none;">
+    <div id="main-content">
       {fetchError && (
-        <div style="color: red; font-weight: bold;">Error fetching posts: {fetchError}</div>
+        <div class="error-message">Error fetching posts: {fetchError}</div>
       )}
       {(!posts || posts.length === 0) && !fetchError && (
-        <div style="color: orange; font-weight: bold;">No posts found.</div>
+        <div class="warning-message">No posts found.</div>
       )}
       <div class="gallery-grid">
         {(posts || []).map((post, idx) => (
           <div>
-            <img class="lightbox-thumb" data-url={post.mainImage?.asset?.url} data-alt={post.title} src={post.mainImage?.asset?.url} alt={post.title} style="width: 100%; cursor: pointer;" />
+            <img class="lightbox-thumb" data-url={post.mainImage?.asset?.url} data-alt={post.title} src={post.mainImage?.asset?.url} alt={post.title} />
           </div>
         ))}
       </div>
-      <div id="lightbox-overlay" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.8); align-items:center; justify-content:center; z-index:1000; opacity:0; transition:opacity 0.3s;">
-        <img id="lightbox-img" src="" alt="" style="max-width:90vw; max-height:90vh; box-shadow:0 0 20px #000; transition:transform 0.3s; transform:scale(0.95);" />
+      <div id="lightbox-overlay">
+        <img id="lightbox-img" src="" alt="" />
       </div>
     </div>
-    <script src="https://w.soundcloud.com/player/api.js"></script>
+    <script src="https://w.soundcloud.com/player/api.js" is:inline></script>
+    <script type="module" src="/three-scene.js"></script>
     <script src="/main.js" is:inline></script>
   </body>
 </html>
