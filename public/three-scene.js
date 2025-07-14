@@ -20,16 +20,16 @@ function onDocumentMouseMove(event) {
 function onDocumentTouchStart(event) {
     if (event.touches.length === 1) {
         // event.preventDefault(); // This was preventing the click event from firing on mobile
-        mouseX = event.touches[0].pageX - windowHalfX;
-        mouseY = event.touches[0].pageY - windowHalfY;
+        mouseX = (event.touches[0].pageX - windowHalfX) * 2.5; // Increased sensitivity for touch
+        mouseY = (event.touches[0].pageY - windowHalfY) * 2.5; // Increased sensitivity for touch
     }
 }
 
 function onDocumentTouchMove(event) {
     if (event.touches.length === 1) {
         event.preventDefault();
-        mouseX = event.touches[0].pageX - windowHalfX;
-        mouseY = event.touches[0].pageY - windowHalfY;
+        mouseX = (event.touches[0].pageX - windowHalfX) * 2.5; // Increased sensitivity for touch
+        mouseY = (event.touches[0].pageY - windowHalfY) * 2.5; // Increased sensitivity for touch
     }
 }
 
