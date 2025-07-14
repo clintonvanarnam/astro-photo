@@ -110,7 +110,30 @@ document.addEventListener('DOMContentLoaded', function () {
   };
 
   intro.addEventListener('click', dismissIntro);
-  intro.addEventListener('touchend', dismissIntro);
+
+  let touchStartX = 0;
+  let touchStartY = 0;
+  const touchMoveThreshold = 10; // pixels
+
+  intro.addEventListener('touchstart', (e) => {
+      if (e.touches.length === 1) {
+          touchStartX = e.touches[0].clientX;
+          touchStartY = e.touches[0].clientY;
+      }
+  }, { passive: true });
+
+  intro.addEventListener('touchend', (e) => {
+      if (e.changedTouches.length === 1) {
+          const touchEndX = e.changedTouches[0].clientX;
+          const touchEndY = e.changedTouches[0].clientY;
+          const deltaX = Math.abs(touchEndX - touchStartX);
+          const deltaY = Math.abs(touchEndY - touchStartY);
+
+          if (deltaX < touchMoveThreshold && deltaY < touchMoveThreshold) {
+              dismissIntro();
+          }
+      }
+  });
 
   const overlay = document.getElementById('lightbox-overlay');
   const img = document.getElementById('lightbox-img');
