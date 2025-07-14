@@ -2,15 +2,27 @@
 import { client } from '../lib/sanityClient.js'
 import { photosQuery } from '../lib/queries.js'
 
-let posts = [];
+const PAGE_SIZE = 120;
+let allPosts = [];
 let fetchError = null;
+
+function shuffle(array) {
+  let currentIndex = array.length, randomIndex;
+  while (currentIndex != 0) {
+    randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex--;
+    [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+  }
+  return array;
+}
+
 try {
-  posts = await client.fetch(photosQuery) || [];
-  console.log('Fetched posts:', posts);
+  allPosts = await client.fetch(photosQuery);
+  if (!Array.isArray(allPosts)) allPosts = [];
+  allPosts = shuffle(allPosts);
 } catch (e) {
-  console.error('Error fetching posts:', e);
   fetchError = e.message || e.toString();
-  posts = [];
+  allPosts = [];
 }
 ---
 
@@ -41,20 +53,64 @@ try {
       {fetchError && (
         <div class="error-message">Error fetching posts: {fetchError}</div>
       )}
-      {(!posts || posts.length === 0) && !fetchError && (
+      {(!allPosts || allPosts.length === 0) && !fetchError && (
         <div class="warning-message">No posts found.</div>
       )}
       <div class="gallery-grid">
-        {(posts || []).map((post, idx) => (
+        {/* Initial batch rendered server-side; more images will be appended by JS for infinite scroll */}
+        {(allPosts.slice(0, PAGE_SIZE) || []).map((post, idx) => (
           <div>
             <img class="lightbox-thumb" data-url={post.mainImage?.asset?.url} data-alt={post.title} src={post.mainImage?.asset?.url} alt={post.title} />
           </div>
         ))}
+        {/* JS will append more images here for infinite scroll */}
       </div>
       <div id="lightbox-overlay">
         <img id="lightbox-img" src="" alt="" />
       </div>
     </div>
+    <script type="text/javascript" is:inline define:vars={{ allPosts, PAGE_SIZE }}>
+      window.galleryData = {
+        allPosts: allPosts ?? [],
+        PAGE_SIZE: PAGE_SIZE
+      };
+      // Infinite lazy infinite repeat scroll logic
+      (function() {
+        const grid = document.querySelector('.gallery-grid');
+        const allPosts = window.galleryData.allPosts;
+        const PAGE_SIZE = window.galleryData.PAGE_SIZE;
+        let loaded = PAGE_SIZE;
+        let loading = false;
+
+        function appendImages() {
+          if (loading) return;
+          loading = true;
+          // Repeat images infinitely by cycling through allPosts
+          for (let i = 0; i < PAGE_SIZE; i++) {
+            const post = allPosts[(loaded + i) % allPosts.length];
+            const div = document.createElement('div');
+            const img = document.createElement('img');
+            img.className = 'lightbox-thumb';
+            img.setAttribute('data-url', post.mainImage && post.mainImage.asset ? post.mainImage.asset.url : '');
+            img.setAttribute('data-alt', post.title || '');
+            img.src = post.mainImage && post.mainImage.asset ? post.mainImage.asset.url : '';
+            img.alt = post.title || '';
+            div.appendChild(img);
+            grid.appendChild(div);
+          }
+          loaded += PAGE_SIZE;
+          loading = false;
+        }
+
+        function onScroll() {
+          if ((window.innerHeight + window.scrollY) >= (document.body.offsetHeight - window.innerHeight / 2)) {
+            appendImages();
+          }
+        }
+
+        window.addEventListener('scroll', onScroll);
+      })();
+    </script>
     <script src="https://w.soundcloud.com/player/api.js" is:inline></script>
     <script type="module" src="/three-scene.js"></script>
     <script src="/main.js" is:inline></script>
