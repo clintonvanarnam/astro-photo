@@ -19,7 +19,7 @@ function onDocumentMouseMove(event) {
 
 function onDocumentTouchStart(event) {
     if (event.touches.length === 1) {
-        event.preventDefault();
+        // event.preventDefault(); // This was preventing the click event from firing on mobile
         mouseX = event.touches[0].pageX - windowHalfX;
         mouseY = event.touches[0].pageY - windowHalfY;
     }

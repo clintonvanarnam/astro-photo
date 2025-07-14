@@ -88,7 +88,11 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     waitForWidget();
   }
-  intro.addEventListener('click', function() {
+
+  const dismissIntro = () => {
+    // Avoid running dismiss logic multiple times
+    if (intro.style.display === 'none') return;
+
     intro.style.display = 'none';
     main.style.display = 'block';
     
@@ -103,8 +107,11 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     setupSoundCloudPlayer(songData.songs[0]);
-    alignSoundControls();
-  });
+  };
+
+  intro.addEventListener('click', dismissIntro);
+  intro.addEventListener('touchend', dismissIntro);
+
   const overlay = document.getElementById('lightbox-overlay');
   const img = document.getElementById('lightbox-img');
   const thumbs = Array.from(document.querySelectorAll('.lightbox-thumb'));
@@ -152,17 +159,4 @@ document.addEventListener('DOMContentLoaded', function () {
       }
     }
   });
-
-  function alignSoundControls() {
-    const galleryGrid = document.querySelector('.gallery-grid');
-    const soundControls = document.getElementById('soundcloud-controls');
-    if (galleryGrid && soundControls && galleryGrid.offsetParent !== null) {
-      const rect = galleryGrid.getBoundingClientRect();
-      const rightMargin = window.innerWidth - rect.right;
-      soundControls.style.right = `${rightMargin}px`;
-    }
-  }
-
-  // Align on resize, but not on initial load since grid is hidden
-  window.addEventListener('resize', alignSoundControls);
 });
