@@ -43,19 +43,6 @@ document.addEventListener('DOMContentLoaded', function () {
     cursor.style.left = (e.clientX + 10) + 'px';
     cursor.style.top = (e.clientY + 10) + 'px';
   });
-  function loadSoundCloudWidgetAPI(callback) {
-    var script = document.createElement('script');
-    script.src = 'https://w.soundcloud.com/player/api.js';
-    script.onload = callback;
-    script.onerror = function() {
-      // Try proxy if CORS fails
-      var proxyScript = document.createElement('script');
-      proxyScript.src = 'https://corsproxy.io/?https://w.soundcloud.com/player/api.js';
-      proxyScript.onload = callback;
-      document.body.appendChild(proxyScript);
-    };
-    document.body.appendChild(script);
-  }
   function setupSoundCloudPlayer(song) {
     const container = document.getElementById('soundcloud-player');
     container.innerHTML = '';
@@ -67,20 +54,16 @@ document.addEventListener('DOMContentLoaded', function () {
     iframe.scrolling = 'no';
     iframe.allow = 'autoplay';
     container.appendChild(iframe);
-    loadSoundCloudWidgetAPI(function() {
+    // Retry logic to wait for SoundCloud API
+    function tryInitWidget(retries = 15) {
       if (window.SC && window.SC.Widget) {
         widget = window.SC.Widget(iframe);
         muteToggle.style.display = 'block';
         soundVisual.style.display = 'block';
+        soundVisual.textContent = '';
         startVisualPulse();
-        widget.bind(window.SC.Widget.Events.READY, function () {
-          // No visual text needed
-        });
-        widget.bind(window.SC.Widget.Events.PLAY, function () {
-          widget.getCurrentSound(function (sound) {
-            // No visual text needed
-          });
-        });
+        widget.bind(window.SC.Widget.Events.READY, function () {});
+        widget.bind(window.SC.Widget.Events.PLAY, function () {});
         muteToggle.onclick = function() {
           if (!widget) return;
           muted = !muted;
@@ -88,17 +71,18 @@ document.addEventListener('DOMContentLoaded', function () {
           muteToggle.textContent = muted ? 'unmute' : 'mute';
           updateSoundVisual(muted ? 0 : 100, !muted);
         };
+      } else if (retries > 0) {
+        setTimeout(() => tryInitWidget(retries - 1), 150);
       } else {
         muteToggle.style.display = 'none';
         soundVisual.textContent = '[SoundCloud API failed]';
       }
-    });
+    }
+    tryInitWidget();
   }
-  window.init3DText();
   intro.addEventListener('click', function() {
     intro.style.display = 'none';
     main.style.display = '';
-    window.stop3DText();
     setupSoundCloudPlayer(songData.songs[0]);
   });
   const overlay = document.getElementById('lightbox-overlay');
