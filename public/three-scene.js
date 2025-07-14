@@ -17,6 +17,22 @@ function onDocumentMouseMove(event) {
     mouseY = (event.clientY - windowHalfY);
 }
 
+function onDocumentTouchStart(event) {
+    if (event.touches.length === 1) {
+        event.preventDefault();
+        mouseX = event.touches[0].pageX - windowHalfX;
+        mouseY = event.touches[0].pageY - windowHalfY;
+    }
+}
+
+function onDocumentTouchMove(event) {
+    if (event.touches.length === 1) {
+        event.preventDefault();
+        mouseX = event.touches[0].pageX - windowHalfX;
+        mouseY = event.touches[0].pageY - windowHalfY;
+    }
+}
+
 function initThreeScene() {
     const canvas = document.getElementById('three-canvas');
     if (!canvas) return;
@@ -34,8 +50,10 @@ function initThreeScene() {
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(window.innerWidth, window.innerHeight);
 
-    // Add mouse listener
+    // Add mouse and touch listeners
     document.addEventListener('mousemove', onDocumentMouseMove);
+    document.addEventListener('touchstart', onDocumentTouchStart, { passive: false });
+    document.addEventListener('touchmove', onDocumentTouchMove, { passive: false });
 
     // Environment Map for reflections
     new RGBELoader()
@@ -108,6 +126,9 @@ function initThreeScene() {
 
 function destroyThreeScene() {
     document.removeEventListener('mousemove', onDocumentMouseMove);
+    document.removeEventListener('touchstart', onDocumentTouchStart);
+    document.removeEventListener('touchmove', onDocumentTouchMove);
+
     if (animationFrameId) {
         cancelAnimationFrame(animationFrameId);
     }
