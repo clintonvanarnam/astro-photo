@@ -18,7 +18,7 @@ try {
   <head>
     <title>DOMAIN KING</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="/main.css" />
+    <link rel="stylesheet" href="public/main.css" />
   </head>
   <body>
     <div id="intro-overlay" style="position:fixed; top:0; left:0; width:100vw; height:100vh; background:#fff; z-index:2000; display:flex; align-items:center; justify-content:center;">
@@ -28,9 +28,9 @@ try {
       </div>
     </div>
     <div id="soundcloud-controls" style="position:fixed; top:18px; right:24px; z-index:3000; display:flex; align-items:center; gap:16px; font-size:10px; font-family:monospace;">
-      <div id="soundcloud-player" style="display:none;"></div>
-      <div id="mute-toggle" style="display:none; cursor:pointer;">mute</div>
-      <pre id="sound-visual" style="margin:0; padding:0; background:none; border:none; color:#fff; font-family:monospace; font-size:10px; line-height:1;">||||||||||</pre>
+      <div id="soundcloud-player" style="display:block;"></div>
+      <div id="mute-toggle" style="display:block; cursor:pointer;">mute</div>
+      <pre id="sound-visual" style="margin:0; padding:0; background:none; border:none; color:#fff; font-family:monospace; font-size:10px; line-height:1; display:block;">[SoundCloud not loaded]</pre>
     </div>
     <div id="main-content" style="display:none;">
       {fetchError && (
@@ -51,9 +51,9 @@ try {
       </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/three@0.149.0/build/three.min.js"></script>
-    <script src="/three/FontLoader.js"></script>
-    <script src="/three/TextGeometry.js"></script>
-    <script src="/three-domainking.js"></script>
-    <script src="/main.js"></script>
+    <script src="/three/FontLoader.js" is:inline></script>
+    <script src="/three/TextGeometry.js" is:inline></script>
+    <script src="/three-domainking.js" is:inline></script>
+    <script src="public/main.js" is:inline></script>
   </body>
 </html>
