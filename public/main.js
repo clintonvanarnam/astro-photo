@@ -194,6 +194,10 @@ function initGalleryFeatures() {
 
       img.src = clickedThumb.getAttribute('data-url');
       img.alt = clickedThumb.getAttribute('data-alt');
+      
+      // Position the overlay at the current scroll position
+      overlay.style.top = `${window.scrollY}px`;
+      
       overlay.style.display = 'flex';
       setTimeout(() => {
         overlay.style.opacity = '1';
