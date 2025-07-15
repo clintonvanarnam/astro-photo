@@ -1,5 +1,6 @@
 ---
 import TransitionShell from '../components/TransitionShell.jsx';
+const { title } = Astro.props;
 ---
 <!doctype html>
 <html lang="en">
@@ -8,7 +9,7 @@ import TransitionShell from '../components/TransitionShell.jsx';
 	<meta name="viewport" content="width=device-width" />
 	<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 	<meta name="generator" content={Astro.generator} />
-	<title>Astro Photo</title>
+	<title>{title || 'Astro Photo'}</title>
 	<link rel="stylesheet" href="/main.css" />
 </head>
 <body>
