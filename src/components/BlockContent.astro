@@ -1,6 +1,0 @@
----
-import { toHTML } from '@portabletext/to-html';
-const { blocks } = Astro.props;
-const html = toHTML(blocks || []);
----
-<div class="block-content" set:html={html}></div>

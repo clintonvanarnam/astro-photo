@@ -1,0 +1,63 @@
+---
+// SlideTransition.astro
+// Wraps page content and applies Astro view transition for sliding effect
+---
+<div transition:name="main-content" class="slide-transition">
+  <slot />
+</div>
+<style>
+.slide-transition {
+  width: 100vw;
+  min-height: 100vh;
+  overflow: hidden;
+}
+/* Ensure children are visible and not clipped */
+.slide-transition > * {
+  width: 100%;
+  min-height: 100vh;
+  display: block;
+}
+
+/* Default animations (slide from right) */
+::view-transition-old(main-content) {
+  animation-name: slide-out-to-left;
+}
+::view-transition-new(main-content) {
+  animation-name: slide-in-from-right;
+}
+
+/* "to-left" animations (About → Images: nav and content move left) */
+[data-astro-transition="to-left"]::view-transition-old(main-content) {
+  animation-name: slide-out-to-right;
+}
+[data-astro-transition="to-left"]::view-transition-new(main-content) {
+  animation-name: slide-in-from-left;
+}
+
+/* "to-right" animations (Images → About: nav and content move right) */
+[data-astro-transition="to-right"]::view-transition-old(main-content) {
+  animation-name: slide-out-to-left;
+}
+[data-astro-transition="to-right"]::view-transition-new(main-content) {
+  animation-name: slide-in-from-right;
+}
+
+
+@keyframes slide-out-to-left {
+  from { transform: translateX(0); }
+  to { transform: translateX(-100%); }
+}
+@keyframes slide-in-from-right {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+@keyframes slide-out-to-right {
+  from { transform: translateX(0); }
+  to { transform: translateX(100%); }
+}
+@keyframes slide-in-from-left {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+</style>

@@ -1,0 +1,44 @@
+---
+import { client } from '../lib/sanityClient.js'
+import { aboutQuery } from '../lib/queries.js'
+import Layout from '../layouts/Layout.astro';
+
+let aboutContent = null;
+let fetchError = null;
+
+try {
+  aboutContent = await client.fetch(aboutQuery);
+} catch (e) {
+  fetchError = (e as Error).message || e?.toString() || 'Unknown error';
+}
+---
+<Layout>
+  <div style="background: linear-gradient(135deg, rgba(0, 0, 0, 0.8) 0%, rgba(20, 20, 40, 0.9) 100%); min-height: 100vh;">
+    <div class="about-content">
+      <h1>About Domain King</h1>
+      <p>Welcome to Domain King - a cutting-edge photography showcase that pushes the boundaries of visual storytelling and digital art.</p>
+      
+      <h2>Our Vision</h2>
+      <p>We believe that photography is more than just capturing moments; it's about creating immersive experiences. Our platform combines stunning visuals with interactive elements to transport you into the heart of each image.</p>
+      
+      <div class="about-features">
+        <div class="feature">
+          <h3>Infinite Scroll Gallery</h3>
+          <p>Seamlessly browse an endless collection of high-resolution photographs with our lazy-loading infinite scroll.</p>
+        </div>
+        <div class="feature">
+          <h3>GSAP Transitions</h3>
+          <p>Experience fluid, high-performance page transitions powered by the GreenSock Animation Platform.</p>
+        </div>
+        <div class="feature">
+          <h3>Immersive Sound</h3>
+          <p>Enjoy a curated ambient soundtrack with integrated SoundCloud controls and a visualizer for a complete sensory experience.</p>
+        </div>
+      </div>
+      
+      {fetchError && (
+        <div class="error-message">Error fetching content: {fetchError}</div>
+      )}
+    </div>
+  </div>
+</Layout>

@@ -7,24 +7,97 @@ let songData = {
     }
   ]
 };
-document.addEventListener('DOMContentLoaded', function () {
+
+function initNavIndicator() {
+  const indicator = document.querySelector('.slider-indicator');
+  const tabs = document.querySelectorAll('.slider-tab');
+  
+  function moveIndicator(activeTab) {
+    if (!indicator || !activeTab) return;
+    const tabRect = activeTab.getBoundingClientRect();
+    const parentRect = activeTab.parentElement.getBoundingClientRect();
+    
+    indicator.style.width = `${tabRect.width}px`;
+    indicator.style.left = `${tabRect.left - parentRect.left}px`;
+  }
+
+  const activeTab = document.querySelector('.slider-tab.active');
+  if (activeTab) {
+    // Initial position
+    setTimeout(() => moveIndicator(activeTab), 50);
+  }
+
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      // We don't need to move it on click because the page transition will handle it.
+      // The 'astro:after-swap' event will re-run this whole logic.
+    });
+  });
+  
+  window.addEventListener('resize', () => {
+    const currentActiveTab = document.querySelector('.slider-tab.active');
+    if (currentActiveTab) {
+      moveIndicator(currentActiveTab);
+    }
+  });
+}
+
+function initGalleryFeatures() {
+  // Update nav active state
+  const currentPath = window.location.pathname;
+  document.querySelectorAll('.slider-tab').forEach(link => {
+    if (link.getAttribute('href') === currentPath) {
+      link.classList.add('active');
+    } else {
+      link.classList.remove('active');
+    }
+  });
+  
+  // Initialize the nav indicator
+  initNavIndicator();
+
   const intro = document.getElementById('intro-overlay');
   const main = document.getElementById('main-content');
   const muteToggle = document.getElementById('mute-toggle');
   const soundVisual = document.getElementById('sound-visual');
+  const soundControls = document.getElementById('soundcloud-controls');
+  const galleryGrid = document.querySelector('.gallery-grid');
+  const overlay = document.getElementById('lightbox-overlay');
+  const imagesSection = document.getElementById('images-section');
+
   let widget = null;
   let muted = false;
   let visualInterval = null;
 
-  // Initialize the Three.js scene
-  if (window.threeScene && typeof window.threeScene.init === 'function') {
-    window.threeScene.init();
+  // --- Intro & Three.js ---
+  if (intro) {
+    // Initialize the Three.js scene with a delay to ensure the module is loaded
+    function initThreeJSWhenReady() {
+      if (window.threeScene && typeof window.threeScene.init === 'function') {
+        window.threeScene.init();
+      } else {
+        setTimeout(initThreeJSWhenReady, 100);
+      }
+    }
+    initThreeJSWhenReady();
+
+    // Hide default cursor on intro overlay
+    intro.style.cursor = 'none';
+
+    intro.addEventListener('click', function() {
+      intro.style.display = 'none';
+      if (main) main.style.display = '';
+      if (soundControls) setupSoundCloudPlayer(songData.songs[0]);
+      alignSoundControls(); // Align controls after main content is visible
+    });
   }
 
+  // --- SoundCloud Player ---
   function updateSoundVisual(volume, playing) {
+    if (!soundVisual) return;
     // One-line equalizer: 10 bars, each with a height char
     const barCount = 10;
-    const chars = [' ', '▂', '▃', '▄', '▅', '▆', '▇', '█']; // Unicode block characters
+    const chars = [' ', '.', ':', 'l', 'I', '!', '|']; // Increasing height
     let bars = [];
     if (!playing || volume === 0) {
       bars = Array(barCount).fill(' ');
@@ -36,52 +109,62 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     soundVisual.textContent = bars.join('');
   }
+
   function startVisualPulse() {
+    if (!soundVisual) return;
     if (visualInterval) clearInterval(visualInterval);
     visualInterval = setInterval(() => {
       updateSoundVisual(muted ? 0 : 100, !muted);
-    }, 180);
+    }, 100);
   }
 
   function setupSoundCloudPlayer(song) {
     const container = document.getElementById('soundcloud-player');
+    if (!container) return;
+
     container.innerHTML = '';
     const iframe = document.createElement('iframe');
     iframe.src = `https://w.soundcloud.com/player/?url=${encodeURIComponent(song.url)}&auto_play=true&hide_related=true&show_comments=false&show_user=false&show_reposts=false&visual=false&loop=true`;
-    iframe.width = '1';
-    iframe.height = '1';
+    iframe.width = '0';
+    iframe.height = '0';
     iframe.frameBorder = 'no';
     iframe.scrolling = 'no';
     iframe.allow = 'autoplay';
     container.appendChild(iframe);
+
     // Wait for SC.Widget to be available, then set up mute button
     function waitForWidget(retries = 30) {
       if (window.SC && window.SC.Widget) {
         widget = window.SC.Widget(iframe);
-        muteToggle.style.display = 'block';
-        soundVisual.style.display = 'block';
-        soundVisual.textContent = '';
+        if (muteToggle) muteToggle.style.display = 'block';
+        if (soundVisual) {
+          soundVisual.style.display = 'block';
+          soundVisual.textContent = '';
+        }
         startVisualPulse();
-        widget.bind(window.SC.Widget.Events.READY, function () {
+        widget.bind(window.SC.Widget.Events.READY, function() {
           // Set initial volume and button state
           widget.setVolume(muted ? 0 : 100);
-          muteToggle.textContent = muted ? 'unmute' : 'mute';
+          if (muteToggle) muteToggle.textContent = muted ? 'unmute' : 'mute';
         });
-        muteToggle.onclick = function() {
-          if (!widget) return;
-          muted = !muted;
-          widget.setVolume(muted ? 0 : 100);
-          muteToggle.textContent = muted ? 'unmute' : 'mute';
-          updateSoundVisual(muted ? 0 : 100, !muted);
-        };
+
+        if (muteToggle) {
+          muteToggle.onclick = function() {
+            if (!widget) return;
+            muted = !muted;
+            widget.setVolume(muted ? 0 : 100);
+            muteToggle.textContent = muted ? 'unmute' : 'mute';
+            updateSoundVisual(muted ? 0 : 100, !muted);
+          };
+        }
       } else if (retries > 0) {
         setTimeout(() => waitForWidget(retries - 1), 100);
       } else {
-        muteToggle.style.display = 'none';
+        if (muteToggle) muteToggle.style.display = 'none';
         // If iframe is present, show static visualizer bar as fallback
-        if (container.querySelector('iframe')) {
-          soundVisual.textContent = '▄▄▄▄▄▄▄▄▄▄';
-        } else {
+        if (container.querySelector('iframe') && soundVisual) {
+          soundVisual.textContent = '| | | | | | | | | |';
+        } else if (soundVisual) {
           soundVisual.textContent = '[SoundCloud API failed]';
         }
       }
@@ -89,90 +172,47 @@ document.addEventListener('DOMContentLoaded', function () {
     waitForWidget();
   }
 
-  const dismissIntro = () => {
-    // Avoid running dismiss logic multiple times
-    if (intro.style.display === 'none') return;
-
-    intro.style.display = 'none';
-    main.style.display = 'block';
-    
-    const soundControls = document.getElementById('soundcloud-controls');
-    if (soundControls) {
-        soundControls.style.display = 'flex';
-    }
-
-    // Destroy the Three.js scene to free up resources
-    if (window.threeScene && typeof window.threeScene.destroy === 'function') {
-        window.threeScene.destroy();
-    }
-
+  // If not showing intro, and on gallery page, start sound immediately.
+  if ((!intro || intro.style.display === 'none') && galleryGrid) {
     setupSoundCloudPlayer(songData.songs[0]);
-  };
-
-  intro.addEventListener('click', dismissIntro);
-
-  let touchStartX = 0;
-  let touchStartY = 0;
-  const touchMoveThreshold = 10; // pixels
-
-  intro.addEventListener('touchstart', (e) => {
-      if (e.touches.length === 1) {
-          touchStartX = e.touches[0].clientX;
-          touchStartY = e.touches[0].clientY;
-      }
-  }, { passive: true });
-
-  intro.addEventListener('touchend', (e) => {
-      if (e.changedTouches.length === 1) {
-          const touchEndX = e.changedTouches[0].clientX;
-          const touchEndY = e.changedTouches[0].clientY;
-          const deltaX = Math.abs(touchEndX - touchStartX);
-          const deltaY = Math.abs(touchEndY - touchStartY);
-
-          if (deltaX < touchMoveThreshold && deltaY < touchMoveThreshold) {
-              dismissIntro();
-          }
-      }
-  });
-
-  const overlay = document.getElementById('lightbox-overlay');
-  const img = document.getElementById('lightbox-img');
-  const thumbs = Array.from(document.querySelectorAll('.lightbox-thumb'));
-  let currentIdx = 0;
-  function showLightbox(idx) {
-    const thumb = thumbs[idx];
-    if (!thumb) return;
-    img.src = thumb.getAttribute('data-url');
-    img.alt = thumb.getAttribute('data-alt');
-    overlay.style.display = 'flex';
-    setTimeout(() => {
-      overlay.style.opacity = '1';
-      img.style.transform = 'scale(1)';
-    }, 10);
-    currentIdx = idx;
   }
-  thumbs.forEach(function(thumb, idx) {
-    thumb.addEventListener('click', function() {
-      showLightbox(idx);
-    });
-  });
-  overlay.addEventListener('click', function(e) {
-    if (e.target === overlay) {
-      overlay.style.opacity = '0';
-      img.style.transform = 'scale(0.95)';
-      setTimeout(() => {
-        overlay.style.display = 'none';
-        img.src = '';
-      }, 300);
+
+
+  // --- Lightbox ---
+  if (overlay) {
+    const img = document.getElementById('lightbox-img');
+    let currentIdx = 0;
+
+    function getAllThumbs() {
+      return Array.from(document.querySelectorAll('.lightbox-thumb'));
     }
-  });
-  document.addEventListener('keydown', function(e) {
-    if (overlay.style.display === 'flex') {
-      if (e.key === 'ArrowLeft') {
-        showLightbox((currentIdx - 1 + thumbs.length) % thumbs.length);
-      } else if (e.key === 'ArrowRight') {
-        showLightbox((currentIdx + 1) % thumbs.length);
-      } else if (e.key === 'Escape') {
+
+    function showLightbox(clickedThumb) {
+      const thumbs = getAllThumbs();
+      const idx = thumbs.indexOf(clickedThumb);
+      if (idx === -1 || !img) return;
+
+      img.src = clickedThumb.getAttribute('data-url');
+      img.alt = clickedThumb.getAttribute('data-alt');
+      overlay.style.display = 'flex';
+      setTimeout(() => {
+        overlay.style.opacity = '1';
+        img.style.transform = 'scale(1)';
+      }, 10);
+      currentIdx = idx;
+    }
+
+    // Use event delegation instead of attaching individual listeners
+    if (galleryGrid) {
+      galleryGrid.addEventListener('click', function(e) {
+        if (e.target.classList.contains('lightbox-thumb')) {
+          showLightbox(e.target);
+        }
+      });
+    }
+
+    overlay.addEventListener('click', function(e) {
+      if (e.target === overlay && img) {
         overlay.style.opacity = '0';
         img.style.transform = 'scale(0.95)';
         setTimeout(() => {
@@ -180,93 +220,121 @@ document.addEventListener('DOMContentLoaded', function () {
           img.src = '';
         }, 300);
       }
-    }
-  });
+    });
 
-  // --- Infinite Scroll ---
-  let currentPage = 1;
-  const PAGE_SIZE = window.galleryData.PAGE_SIZE;
-  const allPosts = JSON.parse(window.galleryData.allPosts);
-  let isLoading = false;
-
-  function createGalleryItem(post) {
-    const div = document.createElement('div');
-    const img = document.createElement('img');
-    img.className = 'lightbox-thumb';
-    img.src = post.mainImage?.asset?.url;
-    img.alt = post.title;
-    img.setAttribute('data-url', post.mainImage?.asset?.url);
-    img.setAttribute('data-alt', post.title);
-    div.appendChild(img);
-    return div;
-  }
-
-  function attachLightbox(img) {
-    img.addEventListener('click', function() {
-      const allThumbs = Array.from(document.querySelectorAll('.lightbox-thumb'));
-      const idx = allThumbs.indexOf(img);
-      showLightbox(idx);
+    document.addEventListener('keydown', function(e) {
+      if (overlay.style.display === 'flex') {
+        const thumbs = getAllThumbs();
+        if (e.key === 'ArrowLeft') {
+          const newIdx = (currentIdx - 1 + thumbs.length) % thumbs.length;
+          showLightbox(thumbs[newIdx]);
+        } else if (e.key === 'ArrowRight') {
+          const newIdx = (currentIdx + 1) % thumbs.length;
+          showLightbox(thumbs[newIdx]);
+        } else if (e.key === 'Escape' && img) {
+          overlay.style.opacity = '0';
+          img.style.transform = 'scale(0.95)';
+          setTimeout(() => {
+            overlay.style.display = 'none';
+            img.src = '';
+          }, 300);
+        }
+      }
     });
   }
 
-  function loadNextPage(force = false) {
-    if (isLoading) {
-      console.log('Already loading, skipping.');
-      return;
+
+  // --- Sound Control Alignment ---
+  function alignSoundControls() {
+    // Re-query inside function to ensure we have the latest elements after nav
+    const currentGalleryGrid = document.querySelector('.gallery-grid');
+    const currentSoundControls = document.getElementById('soundcloud-controls');
+    if (currentGalleryGrid && currentSoundControls && currentGalleryGrid.offsetParent !== null) {
+      const rect = currentGalleryGrid.getBoundingClientRect();
+      const rightMargin = window.innerWidth - rect.right;
+      currentSoundControls.style.right = `${rightMargin}px`;
     }
-    const start = currentPage * PAGE_SIZE;
-    const end = start + PAGE_SIZE;
-    const nextPosts = allPosts.slice(start, end);
-    console.log(`loadNextPage called. currentPage: ${currentPage}, start: ${start}, end: ${end}, nextPosts.length: ${nextPosts.length}`);
-    if (nextPosts.length === 0 && !force) {
-      console.log('No more posts to load.');
-      return;
-    }
-    isLoading = true;
-    const galleryGrid = document.querySelector('.gallery-grid');
-    nextPosts.forEach((post, i) => {
-      console.log(`Appending post idx: ${start + i}, title: ${post.title}`);
-      const newItem = createGalleryItem(post);
-      galleryGrid.appendChild(newItem);
-      attachLightbox(newItem.querySelector('img'));
-    });
-    currentPage++;
-    isLoading = false;
-    console.log(`Finished loading page. currentPage is now: ${currentPage}`);
   }
 
-  function fillViewport() {
-    // Keep loading until the gallery fills the viewport or all posts are loaded
-    let tries = 0;
-    while (
-      document.body.offsetHeight < window.innerHeight &&
-      currentPage * PAGE_SIZE < allPosts.length
-    ) {
-      console.log(`fillViewport: body.offsetHeight=${document.body.offsetHeight}, window.innerHeight=${window.innerHeight}, currentPage=${currentPage}`);
-      loadNextPage(true);
-      tries++;
-      if (tries > 20) {
-        console.log('fillViewport: breaking after 20 tries to avoid infinite loop');
-        break;
+  // Align on resize, but only if on the gallery page
+  if (galleryGrid) {
+    alignSoundControls();
+    window.addEventListener('resize', alignSoundControls);
+  }
+
+
+  // --- Infinite scroll for gallery ---
+  function initInfiniteScroll() {
+    // Re-query grid here
+    const grid = document.querySelector('.gallery-grid');
+    if (!grid || !window.galleryData || !window.galleryData.allPosts) {
+      return;
+    }
+
+    const allPosts = window.galleryData.allPosts;
+    const PAGE_SIZE = window.galleryData.PAGE_SIZE || 120;
+    let loaded = PAGE_SIZE; // Initial batch already loaded
+    let loading = false;
+
+    function appendImages() {
+      if (loading || allPosts.length === 0) return;
+      loading = true;
+
+      // Repeat images infinitely by cycling through allPosts
+      for (let i = 0; i < PAGE_SIZE; i++) {
+        const post = allPosts[(loaded + i) % allPosts.length];
+        if (!post || !post.mainImage || !post.mainImage.asset) continue;
+
+        const divEl = document.createElement('div');
+        const imgEl = document.createElement('img');
+        
+        imgEl.className = 'lightbox-thumb';
+        imgEl.src = post.mainImage.asset.url;
+        imgEl.alt = post.title || 'Gallery image';
+        imgEl.setAttribute('data-url', post.mainImage.asset.url);
+        imgEl.setAttribute('data-alt', post.title || 'Gallery image');
+        imgEl.loading = 'lazy';
+        imgEl.decode = 'async';
+        
+        divEl.appendChild(imgEl);
+        grid.appendChild(divEl);
+      }
+      loaded += PAGE_SIZE;
+      loading = false;
+    }
+
+    function checkScroll() {
+      // Check if the images-section is on the page
+      const currentImagesSection = document.getElementById('images-section');
+      if (!currentImagesSection) {
+        // If not on gallery page, remove the scroll listener
+        window.removeEventListener('scroll', checkScroll);
+        return;
+      }
+      if (window.innerHeight + window.scrollY >= currentImagesSection.offsetHeight - 500) {
+        appendImages();
       }
     }
-    console.log('fillViewport done');
+
+    window.addEventListener('scroll', checkScroll);
+    checkScroll(); // Initial check
   }
 
-  window.addEventListener('scroll', () => {
-    console.log(`Scroll event: window.innerHeight=${window.innerHeight}, window.scrollY=${window.scrollY}, document.body.offsetHeight=${document.body.offsetHeight}`);
-    if (
-      window.innerHeight + window.scrollY >= document.body.offsetHeight - window.innerHeight &&
-      currentPage * PAGE_SIZE < allPosts.length
-    ) {
-      console.log('Triggering loadNextPage from scroll');
-      loadNextPage();
-    }
-  });
+  // Only initialize infinite scroll if we are on the gallery page
+  if (imagesSection) {
+    initInfiniteScroll();
+  }
+}
 
-  window.addEventListener('DOMContentLoaded', fillViewport);
-  setTimeout(fillViewport, 100);
+// This function should be defined once globally
+function handleAstroPageLoad() {
+  // Re-initialize all features, which now includes internal checks for page-specific elements
+  initGalleryFeatures();
+}
 
-  // Attach lightbox to initial images
-  document.querySelectorAll('.lightbox-thumb').forEach(attachLightbox);
-});
+// Use astro:page-load which fires after new page is loaded and visible
+document.removeEventListener('astro:page-load', handleAstroPageLoad);
+document.addEventListener('astro:page-load', handleAstroPageLoad);
+
+// Initial load
+initGalleryFeatures();

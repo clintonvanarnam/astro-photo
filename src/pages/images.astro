@@ -1,0 +1,67 @@
+---
+import { client } from '../lib/sanityClient.js'
+import { photosQuery } from '../lib/queries.js'
+import Layout from '../layouts/Layout.astro';
+
+const PAGE_SIZE = 120;
+let allPosts = [];
+let fetchError = null;
+
+function shuffle(array: any[]) {
+  let currentIndex = array.length, randomIndex;
+  while (currentIndex != 0) {
+    randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex--;
+    [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+  }
+  return array;
+}
+
+try {
+  allPosts = await client.fetch(photosQuery);
+  if (!Array.isArray(allPosts)) allPosts = [];
+  allPosts = shuffle(allPosts);
+} catch (e) {
+  fetchError = (e as Error).message || e?.toString() || 'Unknown error';
+  allPosts = [];
+}
+---
+
+<Layout>
+  <div id="soundcloud-controls">
+    <div id="soundcloud-player"></div>
+    <div class="sound-controls-pill">
+      <div id="mute-toggle">mute</div>
+      <pre id="sound-visual"></pre>
+    </div>
+  </div>
+  
+  <section id="images-section">
+    <div id="main-content">
+      {fetchError && (
+        <div class="error-message">Error fetching posts: {fetchError}</div>
+      )}
+      {(!allPosts || allPosts.length === 0) && !fetchError && (
+        <div class="warning-message">No posts found.</div>
+      )}
+      <div class="gallery-grid">
+        {(allPosts.slice(0, PAGE_SIZE) || []).map((post: any) => (
+          <div>
+            <img class="lightbox-thumb" data-url={post.mainImage?.asset?.url} data-alt={post.title} src={post.mainImage?.asset?.url} alt={post.title} />
+          </div>
+        ))}
+      </div>
+      <div id="lightbox-overlay">
+        <img id="lightbox-img" src="" alt="" />
+      </div>
+    </div>
+  </section>
+  <script type="text/javascript" is:inline define:vars={{ allPosts, PAGE_SIZE }}>
+    window.galleryData = {
+      allPosts: allPosts ?? [],
+      PAGE_SIZE: PAGE_SIZE,
+    };
+  </script>
+  <script src="https://w.soundcloud.com/player/api.js" is:inline></script>
+  <script src="/main.js" is:inline></script>
+</Layout>

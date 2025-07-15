@@ -6,7 +6,7 @@ body {
 }
 
 #main-content {
-  display: none; /* Initially hidden, controlled by JS */
+  display: block; /* Show by default now that we have sections */
 }
 
 .error-message {
@@ -90,15 +90,28 @@ body {
   top: 18px;
   right: 24px;
   z-index: 3000;
-  display: none; /* Initially hidden, controlled by JS */
+  display: block; /* Changed from none to block */
   align-items: center;
   gap: 16px;
   font-size: 10px;
   font-family: monospace;
-  color: #000;
+  color: #fff; /* Changed from #000 to #fff */
 }
 
-#soundcloud-player,
+.sound-controls-pill {
+  display: flex;
+  align-items: center;
+  background-color: rgba(0, 0, 0, 0.5);
+  border-radius: 20px;
+  padding: 5px 15px;
+  backdrop-filter: blur(5px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+#soundcloud-player {
+  display: none; /* Hide the actual player iframe */
+}
+
 #mute-toggle,
 #sound-visual {
   display: block;
@@ -106,6 +119,7 @@ body {
 
 #mute-toggle {
   cursor: pointer;
+  margin-right: 10px; /* Add space between mute and visualizer */
 }
 
 #sound-visual {
@@ -117,6 +131,279 @@ body {
   font-family: monospace;
   font-size: 10px;
   line-height: 1;
+}
+
+/* Slider Styles */
+#slider-menu {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  z-index: 1000;
+
+
+ 
+}
+
+.slider-tabs {
+  position: relative;
+  display: flex;
+  gap: 8px;
+}
+
+.slider-tab {
+  position: relative;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-family: 'SF Mono', 'Fira Code', 'Fira Mono', 'Roboto Mono', monospace;
+  font-size: 14px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.7);
+  transition: color 0.3s ease;
+  white-space: nowrap;
+  user-select: none;
+  z-index: 2;
+  border-radius: 9999px;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.slider-tab:hover {
+  color: #ffffff;
+}
+
+.slider-tab.active {
+  color: #ffffff;
+}
+
+.slider-indicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 9999px;
+  box-shadow: inset 0 1px 1px rgba(0,0,0,0.2);
+  transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+  z-index: 1;
+}
+
+/* About Section Styles */
+.about-content {
+  max-width: 800px;
+  margin: 0 auto;
+  color: #ffffff;
+  padding: 100px 40px 50px;
+  line-height: 1.6;
+}
+
+.about-content h1 {
+  font-size: 3rem;
+  margin-bottom: 30px;
+  background: linear-gradient(45deg, #66d9ef, #a6e4ff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-align: center;
+}
+
+.about-content h2 {
+  font-size: 1.8rem;
+  margin: 40px 0 20px;
+  color: #66d9ef;
+}
+
+.about-content h3 {
+  font-size: 1.2rem;
+  margin-bottom: 10px;
+  color: #a6e4ff;
+}
+
+.about-content p {
+  margin-bottom: 20px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 1.1rem;
+}
+
+.about-features {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 30px;
+  margin-top: 50px;
+}
+
+.feature {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 30px;
+  border-radius: 15px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  text-align: center;
+  transition: transform 0.3s ease, background 0.3s ease;
+}
+
+.feature:hover {
+  transform: translateY(-5px);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.feature h3 {
+  margin-bottom: 15px;
+  font-size: 1.3rem;
+}
+
+.feature p {
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.8);
+  margin: 0;
+}
+
+/* Content Sections */
+.content-section {
+  display: none;
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.content-section.active {
+  display: block;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+#about-section {
+  max-width: 800px;
+  margin: 100px auto 50px;
+  padding: 40px;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border-radius: 15px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.about-content {
+  color: #ffffff;
+  line-height: 1.6;
+  font-size: 16px;
+}
+
+.about-content h1,
+.about-content h2,
+.about-content h3 {
+  color: #ffffff;
+  margin-bottom: 20px;
+}
+
+.about-content p {
+  margin-bottom: 16px;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.about-content a {
+  color: #66d9ef;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.about-content a:hover {
+  color: #a6e4ff;
+}
+
+/* Ensure images section is visible by default */
+#images-section {
+  display: block !important;
+  opacity: 1 !important;
+  transform: translateY(0) !important;
+}
+
+#images-section.content-section {
+  display: block !important;
+}
+
+/* Astro View Transitions for sliding effect */
+::view-transition-old(main-content),
+::view-transition-new(main-content) {
+  animation-duration: 0.6s;
+  animation-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+::view-transition-old(main-content) {
+  animation-name: slide-out-left;
+}
+
+::view-transition-new(main-content) {
+  animation-name: slide-in-right;
+}
+
+@keyframes slide-out-left {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(-100vw);
+    opacity: 0.7;
+  }
+}
+
+@keyframes slide-in-right {
+  from {
+    transform: translateX(100vw);
+    opacity: 0.7;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Remove seamless router styles if present */
+#seamless-slider {
+  display: none !important;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  #webgl-menu {
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    transform: none;
+  }
+  
+  .menu-tab {
+    padding: 10px 16px;
+    font-size: 14px;
+  }
+  
+  #about-section {
+    margin: 80px 20px 30px;
+    padding: 30px 20px;
+  }
+  
+  .about-content {
+    font-size: 14px;
+  }
+  
+  #slider-menu {
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    transform: none;
+  }
+  
+  .slider-tab {
+    padding: 8px 16px;
+    font-size: 14px;
+  }
+  
+  #about-section .about-content {
+    padding: 20px;
+  }
+  
+  #about-section .features-grid {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
 }
 
 @media (max-width: 1200px) {

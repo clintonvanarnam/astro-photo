@@ -1,0 +1,284 @@
+---
+// This is a client-side layout that handles seamless page transitions
+---
+
+<div id="app-container" client:load>
+  <div id="intro-overlay">
+    <canvas id="three-canvas"></canvas>
+  </div>
+  
+  <div id="soundcloud-controls">
+    <div id="soundcloud-player"></div>
+    <div id="mute-toggle">mute</div>
+    <pre id="sound-visual"></pre>
+  </div>
+  
+  <!-- Navigation -->
+  <div id="slider-menu">
+    <div class="slider-tabs">
+      <button class="slider-tab active" data-page="/">Images</button>
+      <button class="slider-tab" data-page="/about">About</button>
+      <div class="slider-indicator"></div>
+    </div>
+  </div>
+  
+  <!-- Sliding Content Container -->
+  <div id="page-slider">
+    <div class="page-content" id="images-page">
+      <slot name="images" />
+    </div>
+    <div class="page-content" id="about-page">
+      <slot name="about" />
+    </div>
+  </div>
+</div>
+
+<script>
+  import { gsap } from 'https://cdn.skypack.dev/gsap@3.12.2';
+  
+  class SeamlessRouter {
+    constructor() {
+      this.currentPage = window.location.pathname;
+      this.isAnimating = false;
+      this.startX = 0;
+      this.startY = 0;
+      this.threshold = 50;
+      
+      this.init();
+    }
+    
+    init() {
+      this.setupInitialPage();
+      this.setupEventListeners();
+      this.updateIndicator();
+      
+      // Handle browser back/forward
+      window.addEventListener('popstate', (e) => {
+        this.navigateToPage(window.location.pathname, false);
+      });
+    }
+    
+    setupInitialPage() {
+      const pagesContainer = document.getElementById('page-slider');
+      const imagesPage = document.getElementById('images-page');
+      const aboutPage = document.getElementById('about-page');
+      
+      if (this.currentPage === '/about') {
+        gsap.set(pagesContainer, { x: '-100%' });
+        gsap.set(aboutPage, { opacity: 1 });
+        gsap.set(imagesPage, { opacity: 0 });
+      } else {
+        gsap.set(pagesContainer, { x: '0%' });
+        gsap.set(imagesPage, { opacity: 1 });
+        gsap.set(aboutPage, { opacity: 0 });
+      }
+    }
+    
+    setupEventListeners() {
+      const tabs = document.querySelectorAll('.slider-tab');
+      const container = document.getElementById('page-slider');
+      
+      // Tab click events
+      tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+          const page = tab.getAttribute('data-page');
+          this.navigateToPage(page, true);
+        });
+      });
+      
+      // Swipe events
+      if (container) {
+        container.addEventListener('touchstart', (e) => this.handleTouchStart(e), { passive: true });
+        container.addEventListener('touchmove', (e) => this.handleTouchMove(e), { passive: false });
+        container.addEventListener('touchend', (e) => this.handleTouchEnd(e), { passive: true });
+        
+        container.addEventListener('mousedown', (e) => this.handleMouseDown(e));
+        container.addEventListener('mousemove', (e) => this.handleMouseMove(e));
+        container.addEventListener('mouseup', (e) => this.handleMouseUp(e));
+      }
+      
+      // Keyboard navigation
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowLeft') {
+          this.navigateToPage('/', true);
+        } else if (e.key === 'ArrowRight') {
+          this.navigateToPage('/about', true);
+        }
+      });
+    }
+    
+    async navigateToPage(page, updateHistory = true) {
+      if (this.isAnimating || page === this.currentPage) return;
+      
+      this.isAnimating = true;
+      this.currentPage = page;
+      
+      const pagesContainer = document.getElementById('page-slider');
+      const imagesPage = document.getElementById('images-page');
+      const aboutPage = document.getElementById('about-page');
+      
+      if (page === '/about') {
+        // Slide to about page
+        await gsap.to(pagesContainer, {
+          x: '-100%',
+          duration: 0.8,
+          ease: 'power2.inOut'
+        });
+        gsap.set(aboutPage, { opacity: 1 });
+        gsap.set(imagesPage, { opacity: 0 });
+      } else {
+        // Slide to images page
+        await gsap.to(pagesContainer, {
+          x: '0%',
+          duration: 0.8,
+          ease: 'power2.inOut'
+        });
+        gsap.set(imagesPage, { opacity: 1 });
+        gsap.set(aboutPage, { opacity: 0 });
+      }
+      
+      if (updateHistory) {
+        history.pushState({ page }, '', page);
+      }
+      
+      this.updateTabs();
+      this.updateIndicator();
+      this.isAnimating = false;
+    }
+    
+    updateTabs() {
+      const tabs = document.querySelectorAll('.slider-tab');
+      tabs.forEach(tab => {
+        const tabPage = tab.getAttribute('data-page');
+        if (tabPage === this.currentPage) {
+          tab.classList.add('active');
+        } else {
+          tab.classList.remove('active');
+        }
+      });
+    }
+    
+    updateIndicator() {
+      const indicator = document.querySelector('.slider-indicator');
+      const activeTab = document.querySelector('.slider-tab.active');
+      
+      if (indicator && activeTab) {
+        const tabRect = activeTab.getBoundingClientRect();
+        const containerRect = activeTab.parentElement.getBoundingClientRect();
+        
+        const left = tabRect.left - containerRect.left;
+        const width = tabRect.width;
+        
+        gsap.to(indicator, {
+          left: left,
+          width: width,
+          duration: 0.3,
+          ease: 'power2.out'
+        });
+      }
+    }
+    
+    // Touch and mouse event handlers (same as before)
+    handleTouchStart(e) {
+      this.startX = e.touches[0].clientX;
+      this.startY = e.touches[0].clientY;
+    }
+    
+    handleTouchMove(e) {
+      if (!this.startX || !this.startY) return;
+      
+      const currentX = e.touches[0].clientX;
+      const currentY = e.touches[0].clientY;
+      
+      const diffX = this.startX - currentX;
+      const diffY = this.startY - currentY;
+      
+      if (Math.abs(diffX) > Math.abs(diffY)) {
+        e.preventDefault();
+      }
+    }
+    
+    handleTouchEnd(e) {
+      if (!this.startX || !this.startY) return;
+      
+      const endX = e.changedTouches[0].clientX;
+      const diffX = this.startX - endX;
+      
+      if (Math.abs(diffX) > this.threshold) {
+        if (diffX > 0) {
+          this.navigateToPage('/about', true);
+        } else {
+          this.navigateToPage('/', true);
+        }
+      }
+      
+      this.startX = 0;
+      this.startY = 0;
+    }
+    
+    handleMouseDown(e) {
+      if (e.target.tagName === 'BUTTON' || e.target.tagName === 'IMG') return;
+      
+      this.startX = e.clientX;
+      this.startY = e.clientY;
+      this.isDragging = true;
+    }
+    
+    handleMouseMove(e) {
+      if (!this.isDragging) return;
+      
+      const currentX = e.clientX;
+      const diffX = this.startX - currentX;
+      
+      if (Math.abs(diffX) > Math.abs(this.startY - e.clientY)) {
+        e.preventDefault();
+      }
+    }
+    
+    handleMouseUp(e) {
+      if (!this.isDragging) return;
+      
+      const endX = e.clientX;
+      const diffX = this.startX - endX;
+      
+      if (Math.abs(diffX) > this.threshold) {
+        if (diffX > 0) {
+          this.navigateToPage('/about', true);
+        } else {
+          this.navigateToPage('/', true);
+        }
+      }
+      
+      this.isDragging = false;
+      this.startX = 0;
+      this.startY = 0;
+    }
+  }
+  
+  // Initialize when component loads
+  window.seamlessRouter = new SeamlessRouter();
+</script>
+
+<style>
+  #page-slider {
+    display: flex;
+    width: 200%;
+    height: 100vh;
+    overflow: hidden;
+  }
+  
+  .page-content {
+    width: 50%;
+    height: 100%;
+    overflow-y: auto;
+    flex-shrink: 0;
+  }
+  
+  .slider-tab {
+    background: none;
+    border: none;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+  }
+</style>

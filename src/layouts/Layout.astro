@@ -1,18 +1,26 @@
+---
+import TransitionShell from '../components/TransitionShell.jsx';
+---
 <!doctype html>
 <html lang="en">
-	<head>
-		<meta charset="UTF-8" />
-		<meta name="viewport" content="width=device-width" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro Basics</title>
-	</head>
-	<body>
-		<slot />
-	</body>
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width" />
+	<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+	<meta name="generator" content={Astro.generator} />
+	<title>Astro Photo</title>
+	<link rel="stylesheet" href="/main.css" />
+</head>
+<body>
+	<TransitionShell client:load>
+		<main>
+			<slot />
+		</main>
+	</TransitionShell>
+</body>
 </html>
 
-<style>
+<style is:global>
 	html,
 	body {
 		margin: 0;

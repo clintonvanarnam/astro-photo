@@ -1,12 +1,16 @@
 ---
 import { client } from '../lib/sanityClient.js'
-import { photosQuery } from '../lib/queries.js'
+import { photosQuery, aboutQuery } from '../lib/queries.js'
+
+import { ViewTransitions } from 'astro:transitions'
+import SlideTransition from '../components/SlideTransition.astro'
 
 const PAGE_SIZE = 120;
 let allPosts = [];
+let aboutContent = null;
 let fetchError = null;
 
-function shuffle(array) {
+function shuffle(array: any[]) {
   let currentIndex = array.length, randomIndex;
   while (currentIndex != 0) {
     randomIndex = Math.floor(Math.random() * currentIndex);
@@ -20,8 +24,10 @@ try {
   allPosts = await client.fetch(photosQuery);
   if (!Array.isArray(allPosts)) allPosts = [];
   allPosts = shuffle(allPosts);
+  
+  aboutContent = await client.fetch(aboutQuery);
 } catch (e) {
-  fetchError = e.message || e.toString();
+  fetchError = (e as Error).message || e?.toString() || 'Unknown error';
   allPosts = [];
 }
 ---
@@ -31,6 +37,7 @@ try {
     <title>DOMAIN KING</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="/main.css" />
+    <ViewTransitions />
     <script type="importmap">
       {
         "imports": {
@@ -41,78 +48,20 @@ try {
     </script>
   </head>
   <body>
-    <div id="intro-overlay">
-      <canvas id="three-canvas"></canvas>
-    </div>
-    <div id="soundcloud-controls">
-      <div id="soundcloud-player"></div>
-      <div id="mute-toggle">mute</div>
-      <pre id="sound-visual"></pre>
-    </div>
-    <div id="main-content">
-      {fetchError && (
-        <div class="error-message">Error fetching posts: {fetchError}</div>
-      )}
-      {(!allPosts || allPosts.length === 0) && !fetchError && (
-        <div class="warning-message">No posts found.</div>
-      )}
-      <div class="gallery-grid">
-        {/* Initial batch rendered server-side; more images will be appended by JS for infinite scroll */}
-        {(allPosts.slice(0, PAGE_SIZE) || []).map((post, idx) => (
-          <div>
-            <img class="lightbox-thumb" data-url={post.mainImage?.asset?.url} data-alt={post.title} src={post.mainImage?.asset?.url} alt={post.title} />
-          </div>
-        ))}
-        {/* JS will append more images here for infinite scroll */}
+    <a href="/images" id="intro-link-wrapper">
+      <div id="intro-overlay">
+        <canvas id="three-canvas"></canvas>
       </div>
-      <div id="lightbox-overlay">
-        <img id="lightbox-img" src="" alt="" />
-      </div>
-    </div>
-    <script type="text/javascript" is:inline define:vars={{ allPosts, PAGE_SIZE }}>
-      window.galleryData = {
-        allPosts: allPosts ?? [],
-        PAGE_SIZE: PAGE_SIZE
-      };
-      // Infinite lazy infinite repeat scroll logic
-      (function() {
-        const grid = document.querySelector('.gallery-grid');
-        const allPosts = window.galleryData.allPosts;
-        const PAGE_SIZE = window.galleryData.PAGE_SIZE;
-        let loaded = PAGE_SIZE;
-        let loading = false;
-
-        function appendImages() {
-          if (loading) return;
-          loading = true;
-          // Repeat images infinitely by cycling through allPosts
-          for (let i = 0; i < PAGE_SIZE; i++) {
-            const post = allPosts[(loaded + i) % allPosts.length];
-            const div = document.createElement('div');
-            const img = document.createElement('img');
-            img.className = 'lightbox-thumb';
-            img.setAttribute('data-url', post.mainImage && post.mainImage.asset ? post.mainImage.asset.url : '');
-            img.setAttribute('data-alt', post.title || '');
-            img.src = post.mainImage && post.mainImage.asset ? post.mainImage.asset.url : '';
-            img.alt = post.title || '';
-            div.appendChild(img);
-            grid.appendChild(div);
-          }
-          loaded += PAGE_SIZE;
-          loading = false;
-        }
-
-        function onScroll() {
-          if ((window.innerHeight + window.scrollY) >= (document.body.offsetHeight - window.innerHeight / 2)) {
-            appendImages();
-          }
-        }
-
-        window.addEventListener('scroll', onScroll);
-      })();
-    </script>
-    <script src="https://w.soundcloud.com/player/api.js" is:inline></script>
+    </a>
+    
     <script type="module" src="/three-scene.js"></script>
-    <script src="/main.js" is:inline></script>
+    <script is:inline>
+      // Initialize the three.js scene on the homepage
+      document.addEventListener('DOMContentLoaded', () => {
+        if (window.threeScene && typeof window.threeScene.init === 'function') {
+          window.threeScene.init();
+        }
+      });
+    </script>
   </body>
 </html>

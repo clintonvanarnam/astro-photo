@@ -7,10 +7,9 @@ import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
 let camera, scene, renderer, mesh;
 let animationFrameId;
 let mouseX = 0, mouseY = 0;
-let targetX = 0, targetY = 0;
-
-const windowHalfX = window.innerWidth / 2;
-const windowHalfY = window.innerHeight / 2;
+let windowHalfX = 0;
+let windowHalfY = 0;
+let isInitialized = false;
 
 function onDocumentMouseMove(event) {
     mouseX = (event.clientX - windowHalfX);
@@ -19,27 +18,86 @@ function onDocumentMouseMove(event) {
 
 function onDocumentTouchStart(event) {
     if (event.touches.length === 1) {
-        // event.preventDefault(); // This was preventing the click event from firing on mobile
-        mouseX = (event.touches[0].pageX - windowHalfX) * 2.5; // Increased sensitivity for touch
-        mouseY = (event.touches[0].pageY - windowHalfY) * 2.5; // Increased sensitivity for touch
+        mouseX = (event.touches[0].pageX - windowHalfX) * 2.5;
+        mouseY = (event.touches[0].pageY - windowHalfY) * 2.5;
     }
 }
 
 function onDocumentTouchMove(event) {
     if (event.touches.length === 1) {
         event.preventDefault();
-        mouseX = (event.touches[0].pageX - windowHalfX) * 2.5; // Increased sensitivity for touch
-        mouseY = (event.touches[0].pageY - windowHalfY) * 2.5; // Increased sensitivity for touch
+        mouseX = (event.touches[0].pageX - windowHalfX) * 2.5;
+        mouseY = (event.touches[0].pageY - windowHalfY) * 2.5;
     }
 }
 
-function initThreeScene() {
+function onWindowResize() {
+    if (!isInitialized) return;
+    windowHalfX = window.innerWidth / 2;
+    windowHalfY = window.innerHeight / 2;
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
+function animate() {
+    if (!isInitialized) return;
+    animationFrameId = requestAnimationFrame(animate);
+    render();
+}
+
+function render() {
+    if (!isInitialized) return;
+    camera.position.x += (mouseX - camera.position.x) * 0.05;
+    camera.position.y += (-mouseY - camera.position.y) * 0.05;
+    camera.lookAt(scene.position);
+    renderer.render(scene, camera);
+}
+
+function cleanup() {
+    console.log('Cleaning up Three.js scene...');
+    if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+        animationFrameId = null;
+    }
+
+    document.removeEventListener('mousemove', onDocumentMouseMove);
+    document.removeEventListener('touchstart', onDocumentTouchStart);
+    document.removeEventListener('touchmove', onDocumentTouchMove);
+    window.removeEventListener('resize', onWindowResize);
+
+    if (renderer) {
+        renderer.dispose();
+        renderer = null;
+    }
+    if (scene) {
+        // Basic cleanup. For more complex scenes, you'd traverse and dispose geometries/materials.
+        scene = null;
+    }
+    camera = null;
+    mesh = null;
+    isInitialized = false;
+}
+
+function init() {
+    if (isInitialized) {
+        console.log('Three.js scene already initialized.');
+        return;
+    }
+
     const canvas = document.getElementById('three-canvas');
-    if (!canvas) return;
+    if (!canvas) {
+        console.log('Canvas element #three-canvas not found. Aborting Three.js initialization.');
+        return;
+    }
+    console.log('Initializing Three.js scene...');
+
+    windowHalfX = window.innerWidth / 2;
+    windowHalfY = window.innerHeight / 2;
 
     // Scene
     scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x000000); // Set background to black
+    scene.background = new THREE.Color(0x000000);
 
     // Camera
     camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -52,20 +110,20 @@ function initThreeScene() {
 
     // Add mouse and touch listeners
     document.addEventListener('mousemove', onDocumentMouseMove);
-    document.addEventListener('touchstart', onDocumentTouchStart, { passive: false });
+    document.addEventListener('touchstart', onDocumentTouchStart, { passive: true });
     document.addEventListener('touchmove', onDocumentTouchMove, { passive: false });
+    window.addEventListener('resize', onWindowResize);
 
     // Environment Map for reflections
     new RGBELoader()
         .setPath('https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/equirectangular/')
         .load('royal_esplanade_1k.hdr', function (texture) {
+            if (!scene) return; // Scene might have been cleaned up
             texture.mapping = THREE.EquirectangularReflectionMapping;
-            // scene.background = texture; // This is removed to keep the background black
-            scene.environment = texture; // This provides the reflections
+            scene.environment = texture;
         });
 
-    // Lighting - The environment map provides most of the light.
-    // A point light can be used to add highlights.
+    // Lighting
     const pointLight = new THREE.PointLight(0xffffff, 1.5, 2000);
     pointLight.position.set(80, 80, 80);
     scene.add(pointLight);
@@ -73,6 +131,7 @@ function initThreeScene() {
     // Font and Text Geometry
     const loader = new FontLoader();
     loader.load('https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/fonts/helvetiker_bold.typeface.json', function (font) {
+        if (!scene) return; // Scene might have been cleaned up
         const geometry = new TextGeometry('DOMAIN KING', {
             font: font,
             size: 10,
@@ -90,82 +149,24 @@ function initThreeScene() {
         const material = new THREE.MeshPhysicalMaterial({
             color: 0xffffff,
             metalness: 1.0,
-            roughness: 0.05,
-            clearcoat: 1.0,
-            clearcoatRoughness: 0.05,
-            reflectivity: 1.0
+            roughness: 0.1,
+            transparent: true,
+            transmission: 0.9,
+            reflectivity: 0.9,
+            ior: 1.5,
+            side: THREE.DoubleSide
         });
+
         mesh = new THREE.Mesh(geometry, material);
         scene.add(mesh);
     });
 
-    // Animation loop
-    function animate() {
-        animationFrameId = requestAnimationFrame(animate);
-
-        targetX = mouseX * .002;
-        targetY = mouseY * .002;
-
-        if (mesh) {
-            mesh.rotation.y += 0.05 * (targetX - mesh.rotation.y);
-            mesh.rotation.x += 0.05 * (targetY - mesh.rotation.x);
-        }
-
-        renderer.render(scene, camera);
-    }
-    animate();
-
-    // Handle window resize
-    window.addEventListener('resize', () => {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(window.devicePixelRatio);
-    });
+    isInitialized = true;
+    animate(); // Start the animation loop
 }
 
-function destroyThreeScene() {
-    document.removeEventListener('mousemove', onDocumentMouseMove);
-    document.removeEventListener('touchstart', onDocumentTouchStart);
-    document.removeEventListener('touchmove', onDocumentTouchMove);
-
-    if (animationFrameId) {
-        cancelAnimationFrame(animationFrameId);
-    }
-    if (renderer) {
-        renderer.dispose();
-        renderer.forceContextLoss();
-        renderer.domElement = null;
-        renderer = null;
-    }
-    if (scene) {
-        scene.traverse(object => {
-            if (object.geometry) object.geometry.dispose();
-            if (object.material) {
-                if (Array.isArray(object.material)) {
-                    object.material.forEach(material => material.dispose());
-                } else {
-                    object.material.dispose();
-                }
-            }
-        });
-        scene = null;
-    }
-    camera = null;
-    mesh = null;
-    const canvas = document.getElementById('three-canvas');
-    if (canvas) {
-        const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-        if (gl) {
-            const loseContextExtension = gl.getExtension('WEBGL_lose_context');
-            if (loseContextExtension) {
-                loseContextExtension.loseContext();
-            }
-        }
-    }
-}
-
+// Expose init and cleanup to the global scope
 window.threeScene = {
-    init: initThreeScene,
-    destroy: destroyThreeScene
+    init: init,
+    cleanup: cleanup
 };
