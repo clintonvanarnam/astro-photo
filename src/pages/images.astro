@@ -45,7 +45,7 @@ try {
         <div class="warning-message">No posts found.</div>
       )}
       <div class="gallery-grid">
-        {(allPosts.slice(0, PAGE_SIZE) || []).map((post: any) => (
+        {(allPosts.slice(0, 5) || []).map((post: any) => (
           <div>
             <img class="lightbox-thumb" data-url={post.mainImage?.asset?.url} data-alt={post.title} src={post.mainImage?.asset?.url} alt={post.title} />
           </div>
