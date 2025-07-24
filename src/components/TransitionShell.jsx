@@ -55,7 +55,7 @@ export default function TransitionShell({ children }) {
       gsap.to(indicatorRef.current, {
         width: tabRect.width,
         x: tabRect.left - parentRect.left,
-        duration: 0.6,
+        duration: 0.3, // Halved from 0.6 to double the speed
         ease: 'power4.inOut',
       });
     }
@@ -67,7 +67,9 @@ export default function TransitionShell({ children }) {
       e.preventDefault();
       if (activeTab === idx || isAnimatingRef.current) return;
       isAnimatingRef.current = true;
-      setActiveTab(idx);
+      
+      // By removing setActiveTab(idx) here, we prevent the first animation.
+      // The animation will now only run once when the new page loads.
       
       window.sessionStorage.setItem('astro_page_transition', 'true');
 
